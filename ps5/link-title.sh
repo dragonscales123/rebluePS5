@@ -150,6 +150,10 @@ param["contentId"] = f"UP9000-{title_id}_00-REBLUEPS5000000"
 param["localizedParameters"]["en-US"]["titleName"] = name
 json.dump(param, open(out, "w"), indent=2)
 PY
+# A personal icon (icon0.local.png next to the placeholder, ignored by git)
+# wins over the placeholder, so it survives rebuilds and stays unpublished.
+local_icon="$(dirname "$icon")/icon0.local.png"
+[[ -f $local_icon ]] && icon=$local_icon
 cp "$icon" "$app/sce_sys/icon0.png"
 [[ -f ${env_example:-} ]] && cp "$env_example" "$app/ps5-env.example.txt"
 # The portable install record: game data in game/ next to eboot.bin, so the
