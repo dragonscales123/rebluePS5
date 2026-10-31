@@ -144,6 +144,7 @@ re:Blue is the work of its development team, and this port would not exist witho
 
 - **[dragonscales123](https://github.com/dragonscales123)**, with Claude
 - **[mihawk-99](https://github.com/mihawk-99)**, for the PS5 payload SDK, PS5_Vulkan and the RADV port this build renders through
+- Dashboard icon: [Dragon emblem](https://pixabay.com/illustrations/dragon-mythology-fantasy-monster-1721875/) by TheDigitalArtist on Pixabay, under the Pixabay Content License
 
 ### Special Thanks
 

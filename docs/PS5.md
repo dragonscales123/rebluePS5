@@ -71,7 +71,8 @@ thread) for chasing heap damage. Switching it rebuilds one file.
 The result is `out/build/ps5/dist/PPSA99213/`: `eboot.bin`, `sce_sys/`,
 `sce_module/` and `.reblue_install`.
 
-To use your own dashboard icon, put a 512x512 PNG at
+The dashboard icon (`ps5/sce_sys/icon0.png`) is TheDigitalArtist's dragon
+emblem from Pixabay (Pixabay Content License). To use your own, put a 512x512 PNG at
 `ps5/sce_sys/icon0.local.png`. Git ignores it and the build uses it in
 place of the placeholder.
 
