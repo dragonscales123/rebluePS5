@@ -34,7 +34,7 @@ repository, and nothing derived from it should be published.
   ```
   work/
     reblue/              this repository, branch ps5-port
-    rexglue-sdk/         dragonscales123/rexglue-sdk-PS5, branch ps5-port (cloned into this folder name)
+    rexglue-sdk-PS5/     dragonscales123/rexglue-sdk-PS5, branch ps5-port
     PS5_VulkanTemplate/
     PS5_Vulkan/
   ```

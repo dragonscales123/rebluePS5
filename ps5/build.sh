@@ -20,7 +20,12 @@ root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 parent=$(dirname "$root")
 sdk=${PS5_PAYLOAD_SDK:-$parent/PS5_VulkanTemplate/.deps/native/ps5-payload-sdk}
 vulkan=${PS5_VULKAN_DIR:-$parent/PS5_Vulkan}
-rexsdk=${REXSDK_DIR:-$parent/rexglue-sdk}
+# The SDK fork (dragonscales123/rexglue-sdk-PS5) clones into rexglue-sdk-PS5;
+# older checkouts used rexglue-sdk.
+if [[ -n ${REXSDK_DIR:-} ]]; then rexsdk=$REXSDK_DIR
+elif [[ -d $parent/rexglue-sdk-PS5 ]]; then rexsdk=$parent/rexglue-sdk-PS5
+else rexsdk=$parent/rexglue-sdk
+fi
 title_id=PPSA99213
 while (($#)); do
     case $1 in
