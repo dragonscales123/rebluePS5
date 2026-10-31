@@ -68,19 +68,19 @@ long time (about 110 MB of generated C++).
 (`src/platform/ps5_debug_heap.cpp`: guard bytes, a quarantine and a checker
 thread) for chasing heap damage. Switching it rebuilds one file.
 
-The result is `out/build/ps5/dist/PPSA99213/`: `eboot.bin`, `sce_sys/` and
-`sce_module/`.
+The result is `out/build/ps5/dist/PPSA99213/`: `eboot.bin`, `sce_sys/`,
+`sce_module/` and `.reblue_install`.
 
 ## Install
 
 1. Copy the title folder to `/data/homebrew/PPSA99213/` (FTP works).
-2. Copy the extracted game files of all three discs into
-   `/data/homebrew/PPSA99213/game/`, laid out as the Windows installer leaves
-   them (`default.xex`, `pack/`, ...).
-3. Write `/data/homebrew/PPSA99213/.reblue_install`, the portable install
-   record the Windows build writes next to `reblue.exe`, so the title does
-   not ask for the installer.
-4. Launch it from your homebrew launcher.
+2. Extract the files from all three disc images and merge them into
+   `/data/homebrew/PPSA99213/game/`, so that `game/default.xex` and
+   `game/pack/` exist.
+3. Launch it from your homebrew launcher.
+
+The title folder includes `.reblue_install`, a portable install record that
+points the title at `game/` next to it; the PS5 build has no setup wizard.
 
 Logs go to `/data/homebrew/PPSA99213/logs/`, and early boot steps to
 `boot.txt` in the same folder. Settings and saves live under `profiles/`.
@@ -115,4 +115,5 @@ In reblue:
 - `src/platform/crash_handler.cpp`: on PS5 a crash report also lists every
   guest thread and its processor, the audio engine's per-processor state and
   the faulting guest context.
-- No installer and no updater on PS5; shaders are compiled at build time.
+- No setup wizard and no updater on PS5; `ps5/link-title.sh` writes the
+  install record into the title folder. Shaders are compiled at build time.

@@ -1,22 +1,22 @@
 <h1 align="center">
-  <img width="1480" height="662" alt="Untitled-1" src="https://github.com/user-attachments/assets/1779fdfd-bc3a-416d-8b6c-38874d8eae93" />
-  <a href="https://discord.gg/92MCyYDpuY">
-    <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" alt="Discord">
-  </a>
+  <img width="1480" height="662" alt="re:Blue" src="https://github.com/user-attachments/assets/1779fdfd-bc3a-416d-8b6c-38874d8eae93" />
 </h1>
 
 > [!IMPORTANT]
-> re:Blue is an unofficial project and contains NO ASSETS from the original game.
-> This project is useless unless you have a legal backup of the ISO images from the Global release (US/EU, Asia/JP support coming soon).
+> re:Blue PS5 is an unofficial project and contains NO ASSETS from the original game.
+> It is useless unless you have a legal backup of the three Blue Dragon discs (Global release, US/EU).
+> It runs on a jailbroken PS5 only, as homebrew.
 
+# re:Blue PS5
 
-# re:Blue
+A PS5 homebrew port of [re:Blue](https://github.com/zolaware/reblue), which rebuilds Blue Dragon as a native program through static recompilation: the original Xbox 360 code is translated ahead of time into code the console runs directly, instead of emulating an Xbox 360 around it. On the PS5 it renders through Vulkan (Mesa's RADV driver, built into the title) and runs on the [ReXGlue SDK's PS5 port](https://github.com/dragonscales123/rexglue-sdk/tree/ps5-port).
 
-re:Blue rebuilds Blue Dragon as a native application through static recompilation, translating the original code into something your machine runs directly rather than emulating a console around it. That opens the door to things an emulator cannot reach: higher frame rates, modern resolutions, and real mod support.
+This is a port of zolaware's work, not a replacement for it. Please don't take PS5 issues to the re:Blue team.
 
 ## Table of Contents
 
-- [Hardware Requirements](#hardware-requirements)
+- [Status](#status)
+- [Requirements](#requirements)
 - [How to Install](#how-to-install)
 - [Features](#features)
 - [FAQ](#faq)
@@ -24,52 +24,41 @@ re:Blue rebuilds Blue Dragon as a native application through static recompilatio
 - [Credits](#credits)
 - [License](#license)
 
-## Hardware Requirements
+## Status
 
-Requires all three retail Blue Dragon discs or their disc images. Steam Deck is supported. 64-bit ARM processors are supported on Linux and macOS. Windows is x86-64 only. 
+Tested on Disc 1: boots to the title screen, plays with full graphics, music and voices, DualSense input, field exploration, battles, cutscenes, and saving and loading. The frame rate is stable at 3840x2160.
 
-### Minimum
+Not tested yet: Discs 2 and 3, DLC, and mods.
 
-- OS: Windows 10 version 1909 or later, Ubuntu 24.04 / Fedora 40 / SteamOS 3.6 or later, or macOS 13.3 Ventura or later
-- Processor: Intel Core i5-4460 3.2 GHz 4 Core or AMD Ryzen 3 1200 or Apple M1, or equivalent
-- Memory: 8 GB RAM
-- GPU: Nvidia GTX 1050 Ti or AMD RX 570, or equivalent performance & VRAM. DirectX 12 with Shader Model 6.0, or Vulkan 1.2, or Metal
-- Storage: 15 GB available space
+## Requirements
 
-### Recommended
-
-- OS: Windows 11, SteamOS 3.6, or macOS 14 Sonoma or later
-- Processor: AMD Ryzen 5 5600X or Intel Core i5-12400 or Apple M2, or equivalent performance, 6 physical cores minimum
-- Memory: 16 GB RAM
-- GPU: Nvidia RTX 2060 or AMD RX 5700, or equivalent performance & VRAM. 8 GB VRAM for 4K with MSAA
-- Storage: 15 GB available space
+- A jailbroken PS5 that can run homebrew titles from `/data/homebrew/`, with FTP access to the console.
+- All three retail Blue Dragon discs or their disc images (US/EU release).
+- About 15 GB free on the console.
 
 ## How to Install
 
-[Download latest release for your platform](https://github.com/zolaware/reblue/releases/latest) or [build yourself](#building)
+1. **Get the title folder.** Build it yourself (see [Building](#building)). You get a folder named `PPSA99213` with `eboot.bin`, `sce_sys/`, `sce_module/` and `.reblue_install`.
+2. **Copy it to the console** as `/data/homebrew/PPSA99213/`.
+3. **Add the game files.** Extract the files from all three disc images (for example with `extract-xiso`) and merge them into `/data/homebrew/PPSA99213/game/`, so that `game/default.xex` and `game/pack/` exist.
+4. **Launch** Blue Dragon from your homebrew launcher.
 
-1. Blue Dragon shipped on three DVDs, and you will need a disc image of each one from your own copy of the game.
-
-2. Run the executable. A setup wizard will guide you through the rest. You will be asked to point it at each of the three disc images in turn, and it will check each one before letting you continue. Once you pick where to install, the program copies itself there and restarts from that location, so you can delete the folder you extracted the zip into.
-
-3. Pick a graphics quality preset. The wizard copies the game files out of the discs, and you are done. You may also install DLC from this installer or from the main menu under the config menu
-
-The wizard only needs to run once. If something later goes missing from your install, launching with `--repair` reopens it on your existing install and copies back only what it needs.
+There is no setup wizard on the PS5. `.reblue_install` tells the title that its game files are in `game/` next to it.
 
 ## Features
 
-Everything below is new to re:Blue. All of it is configurable in game, from the title screen or the camp menu.
+Everything below comes from re:Blue and works the same way on the PS5. All of it is configurable in game, from the title screen or the camp menu.
 
 ### Graphics
 
-- Resolutions up to 4K, windowed or fullscreen, on whichever monitor you pick
+- Rendering at up to 3840x2160
 - Aspect ratios 16:9, 4:3, 16:10, 21:9, 32:9, plus auto and stretch
 - Four quality presets, Low through Ultra
 - MSAA up to 8x or SSAA up to 4x
 - Anisotropic filtering
 - Shadow quality and draw distance
 - Depth of field adjustment
-- Unlocked FPS with optional caps and VSync
+- Unlocked frame rate with optional caps and VSync
 
 ### Quality of Life
 
@@ -82,63 +71,52 @@ Everything below is new to re:Blue. All of it is configurable in game, from the 
 - The field HUD can fade out once you stop pressing anything, or stay off entirely
 - Achievement list viewable in game, with eight new re:Blue achievements alongside the original ones
 - Master volume control
-- Separate center, rear, and subwoofer levels for 5.1/7.1 tuning
-- Fully native keyboard and mouse support with cursor and look modes supported by mouse
-- Every controller button rebindable to a key, with mouse sensitivity and cursor opacity of your own
-- Menus take the mouse directly: hover a row to move the cursor, click to confirm, wheel to scroll
-- Custom input based icons/glyphs for hud elements, following the device you last used or pinned to Xbox, PlayStation, Switch, or Steam Deck
+- Button prompt glyphs for PlayStation, Xbox, Switch, or Steam Deck controllers
 - UI language and voice language chosen separately
-
+- Custom menus in English, French, German, Italian, and Spanish
 
 ### Mods and DLC
 
 - Built-in mod manager
 - Official DLC is supported
 
-### Platforms and Languages
-
-- Windows on DX12 (Vulkan support is available if built from source)
-- Linux AMD64 and ARM64, including the Steam Deck and other handhelds
-- macOS ARM64 (AMD64 support is available if built from source)
-- Custom menus in English, French, German, Italian, and Spanish
+Neither has been tested on the PS5 yet.
 
 ## FAQ
 
 ### Where is my save data and configuration stored?
 
-Everything lives under the folder you installed to:
+Everything lives in the title folder, `/data/homebrew/PPSA99213/`:
 
-- Saves and settings: `profiles\default\`
-- Your configuration file: `profiles\default\reblue.toml`
-- Game files copied from your discs: `game\`
-- Mods: `mods\`
+- Saves and settings: `profiles/default/`
+- Your configuration file: `profiles/default/reblue.toml`
+- Game files from your discs: `game/`
+- Logs: `logs/`, plus `boot.txt` for the first steps of startup
+- Mods: `mods/`
+
+Copy `profiles/` off the console before you delete or reinstall the title folder.
 
 ### I want to update the game. Will I lose my save data?
 
-No. Copy a newer build over your existing installation and your saves, settings, and mods are left alone. You do not need to reinstall or point the wizard at your discs again.
+No. Replace `eboot.bin` (and `sce_sys/`, `sce_module/` if they changed) over FTP. Your saves, settings and game files are left alone.
 
-### How do I install mods?
+### The game closed with "Something went wrong". What do I send?
 
-Use the mod manager in the config menu. It accepts a mod folder or a zip file and puts everything in the right place for you
-
-### Can I keep more than one set of saves?
-
-Yes. Each profile is its own folder under `profiles\`, holding that profile's saves, settings, achievements, and DLC toggles. Launch with `--profile <name>` to pick one, and anything but `default` starts out fresh.
+The newest file in `logs/` and `boot.txt`. On the PS5 a crash report also lists every guest thread and the faulting guest state.
 
 ## Building
 
-re:Blue builds with CMake and vcpkg against the [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk).
+The PS5 build cross-compiles on Linux (Ubuntu 24.04; WSL works) with clang/lld 20, mihawk-99's PS5 payload SDK and PS5_Vulkan (RADV), and the ReXGlue SDK's `ps5-port` branch:
 
 ```sh
-cmake --preset win-amd64-release       # or linux-amd64-release
-cmake --build --preset win-amd64-release
+ps5/build.sh
 ```
 
-Presets cover `win-amd64`, `win-vk`, `linux-amd64`, `linux-arm64`, `mac-amd64`, and `mac-arm64`, each in Debug, Release, and RelWithDebInfo. A `win-amd64` preset builds both the DX12 executable (`reblue.exe`) and the Vulkan one (`reblue_vk.exe`), and a `win-vk` one builds the Vulkan executable alone. As with running the game, building requires the files from your own copy of Blue Dragon.
+The full guide, with the toolchain commits, the game files to put in `assets/`, the folder layout and the debug options, is in [docs/PS5.md](docs/PS5.md). Building needs files from your own copy of Blue Dragon.
 
 ## Credits
 
-Huge thanks to everyone who has put time into this. re:Blue would not be where it is without you.
+re:Blue is the work of its development team, and this port would not exist without it.
 
 ### re:Blue Development Team
 
@@ -161,6 +139,11 @@ Huge thanks to everyone who has put time into this. re:Blue would not be where i
 - **[mrcmunir](https://github.com/mrcmunir)** - Spanish Translations
 - **[mystixor](https://github.com/mystixor)** - German Translations
 - **[toby](https://github.com/TbyDtch)** - Graphic Design
+
+### PS5 Port
+
+- **[dragonscales123](https://github.com/dragonscales123)**, with Claude
+- **[mihawk-99](https://github.com/mihawk-99)**, for the PS5 payload SDK, PS5_Vulkan and the RADV port this build renders through
 
 ### Special Thanks
 

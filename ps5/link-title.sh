@@ -152,6 +152,17 @@ json.dump(param, open(out, "w"), indent=2)
 PY
 cp "$icon" "$app/sce_sys/icon0.png"
 [[ -f ${env_example:-} ]] && cp "$env_example" "$app/ps5-env.example.txt"
+# The portable install record: game data in game/ next to eboot.bin, so the
+# title starts without an installer (the PS5 build has none).
+cat > "$app/.reblue_install" <<RECORD
+# re:Blue install record for the PS5 title (portable: install_root is the
+# title folder /app0, game data in /app0/game).
+schema_version = 3
+app_version = "${app_version:-0.0.0}"
+disc1_fingerprint = ""
+disc2_fingerprint = ""
+disc3_fingerprint = ""
+RECORD
 (cd "$vulkan/runtime" && sha256sum --check --strict --quiet libc.prx.sha256)
 cp "$vulkan/runtime/libc.prx" "$app/sce_module/libc.prx"
 mv "$work/eboot.elf.new" "$output"
