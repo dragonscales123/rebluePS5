@@ -1,0 +1,31 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1cbc506..0067c10 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -14,6 +14,11 @@ if(APPLE)
+ endif()
+ 
+ string(COMPARE EQUAL ${CMAKE_SYSTEM_NAME} "Linux" IS_LINUX)
++# The PS5 (payload SDK, FreeBSD) has no window system either: SDL makes the
++# surface (VK_KHR_display).
++if(PS5)
++    set(IS_LINUX TRUE)
++endif()
+ 
+ # Project options
+ include(CMakeDependentOption)
+diff --git a/plume_vulkan.cpp b/plume_vulkan.cpp
+index 11abda8..b787511 100644
+--- a/plume_vulkan.cpp
++++ b/plume_vulkan.cpp
+@@ -4481,7 +4481,9 @@ namespace plume {
+     // VulkanInterface
+ 
+     VulkanInterface::VulkanInterface() {
+-        VkResult res = volkInitialize();
++        // Keep a loader volk already has: a PS5 title resolves Vulkan through the
++        // RADV it links (volkInitializeCustom) and has no libvulkan to open.
++        VkResult res = volkGetInstanceVersion() ? VK_SUCCESS : volkInitialize();
+         if (res != VK_SUCCESS) {
+             fprintf(stderr, "volkInitialize failed with error code 0x%X.\n", res);
+             return;

@@ -7,11 +7,17 @@ include("${CMAKE_CURRENT_LIST_DIR}/shaders.cmake")
 # command line, so every commit would rebuild the whole target.
 reblue_write_build_info("${REBLUE_GEN_DIR}/core/build_info.h")
 
-reblue_shader_cache(
-    RECOMP_TARGET XenosRecomp
-    INPUT_DIR     "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-    INCLUDE_FILE  "${REBLUE_SHADER_COMMON_H}"
-    OUTPUT_CPP    "${REBLUE_GEN_DIR}/shader_cache.cpp")
+if(PS5)
+    # Made on the build host by ps5/build.sh (XenosRecomp over assets/).
+    configure_file("${REBLUE_PS5_SHADER_CACHE}" "${REBLUE_GEN_DIR}/shader_cache.cpp" COPYONLY)
+    add_custom_target(reblue_shader_cache_gen)
+else()
+    reblue_shader_cache(
+        RECOMP_TARGET XenosRecomp
+        INPUT_DIR     "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        INCLUDE_FILE  "${REBLUE_SHADER_COMMON_H}"
+        OUTPUT_CPP    "${REBLUE_GEN_DIR}/shader_cache.cpp")
+endif()
 set(REBLUE_GENERATED_SOURCES "${REBLUE_GEN_DIR}/shader_cache.cpp")
 
 foreach(shader IN ITEMS copy_vs bd_2d_blit_vs imgui_vs)

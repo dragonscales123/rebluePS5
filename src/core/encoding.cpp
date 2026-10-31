@@ -63,7 +63,13 @@ std::u16string Utf8ToU16(std::string_view s) {
 
 #else // !defined(_WIN32)
 
+#if defined(__PROSPERO__)
+#include <algorithm>
+#include <array>
+#include <utility>
+#else
 #include <iconv.h>
+#endif
 #include <rex/types.h>
 #include <vector>
 
@@ -99,6 +105,73 @@ u32 NextUtf8(std::string_view s, size_t &i) {
   return cp;
 }
 
+#if defined(__PROSPERO__)
+// The PS5's libc has no iconv: CP932 <-> UTF-8 from Microsoft's table
+// (core/cp932_table.inc, generated from Python's cp932 codec).
+struct Cp932Pair {
+  u16 sjis;
+  u16 unicode;
+};
+constexpr Cp932Pair kCp932[] = {
+#include "core/cp932_table.inc"
+};
+
+bool IsSjisLead(u8 c) { return (c >= 0x81 && c <= 0x9F) || (c >= 0xE0 && c <= 0xFC); }
+
+std::string Cp932ToUtf8(std::string_view s) {
+  std::string out;
+  out.reserve(s.size() * 2);
+  for (size_t i = 0; i < s.size(); ++i) {
+    const u8 c = static_cast<u8>(s[i]);
+    if (c < 0x80) {
+      out.push_back(static_cast<char>(c));
+    } else if (c >= 0xA1 && c <= 0xDF) {
+      AppendUtf8(out, 0xFF61u + (c - 0xA1u)); // half-width katakana
+    } else if (IsSjisLead(c) && i + 1 < s.size()) {
+      const u16 code = u16(c << 8 | static_cast<u8>(s[++i]));
+      const auto *end = std::end(kCp932);
+      const auto *it = std::lower_bound(std::begin(kCp932), end, code,
+                                        [](const Cp932Pair &p, u16 v) { return p.sjis < v; });
+      AppendUtf8(out, (it != end && it->sjis == code) ? it->unicode : u32('?'));
+    } else {
+      out.push_back('?');
+    }
+  }
+  return out;
+}
+
+std::string Utf8ToCp932(std::string_view s) {
+  // Unicode -> CP932, sorted by code point; the first CP932 code wins where a
+  // code point has several (as iconv's CP932 does for NEC/IBM duplicates).
+  static const auto reverse = [] {
+    std::array<Cp932Pair, std::size(kCp932)> r{};
+    std::copy(std::begin(kCp932), std::end(kCp932), r.begin());
+    std::stable_sort(r.begin(), r.end(),
+                     [](const Cp932Pair &a, const Cp932Pair &b) { return a.unicode < b.unicode; });
+    return r;
+  }();
+  std::string out;
+  out.reserve(s.size());
+  for (size_t i = 0; i < s.size();) {
+    const u32 cp = NextUtf8(s, i);
+    if (cp < 0x80) {
+      out.push_back(static_cast<char>(cp));
+    } else if (cp >= 0xFF61 && cp <= 0xFF9F) {
+      out.push_back(static_cast<char>(0xA1 + (cp - 0xFF61)));
+    } else {
+      const auto it = std::lower_bound(reverse.begin(), reverse.end(), cp,
+                                       [](const Cp932Pair &p, u32 v) { return p.unicode < v; });
+      if (it != reverse.end() && it->unicode == cp) {
+        out.push_back(static_cast<char>(it->sjis >> 8));
+        out.push_back(static_cast<char>(it->sjis & 0xFF));
+      } else {
+        out.push_back('?');
+      }
+    }
+  }
+  return out;
+}
+#else
 std::string Convert(std::string_view s, const char *to, const char *from) {
   if (s.empty())
     return {};
@@ -124,6 +197,7 @@ std::string Convert(std::string_view s, const char *to, const char *from) {
   iconv_close(cd);
   return std::string(out.data(), static_cast<size_t>(outbuf - out.data()));
 }
+#endif
 
 } // namespace
 
@@ -145,11 +219,19 @@ std::string WideToUtf8(std::wstring_view s) {
 }
 
 std::string SjisToUtf8(std::string_view s) {
+#if defined(__PROSPERO__)
+  return Cp932ToUtf8(s);
+#else
   return Convert(s, "UTF-8", "CP932");
+#endif
 }
 
 std::string Utf8ToSjis(std::string_view s) {
+#if defined(__PROSPERO__)
+  return Utf8ToCp932(s);
+#else
   return Convert(s, "CP932", "UTF-8");
+#endif
 }
 
 std::u16string Utf8ToU16(std::string_view s) {

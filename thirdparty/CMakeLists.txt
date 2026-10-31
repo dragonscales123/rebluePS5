@@ -4,14 +4,18 @@ endif()
 # Linux picks X11 or Wayland at runtime, so plume builds its surface through the
 # SDL3 window the SDK already owns. rexglue.cmake has imported SDL3 by now, so
 # plume finds that target rather than a second copy on the system.
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR PS5)
     set(PLUME_SDL_VULKAN_ENABLED ON CACHE BOOL "" FORCE)
 endif()
 add_subdirectory(plume EXCLUDE_FROM_ALL)
 
-add_subdirectory(XenosRecomp EXCLUDE_FROM_ALL)
-target_compile_definitions(XenosRecomp PRIVATE REBLUE_RECOMP)
-target_precompile_headers(XenosRecomp PRIVATE <fmt/format.h>)
+# The shader recompiler runs on the build host; a PS5 cross build takes its
+# output (REBLUE_PS5_SHADER_CACHE) instead of building it for the console.
+if(NOT PS5)
+    add_subdirectory(XenosRecomp EXCLUDE_FROM_ALL)
+    target_compile_definitions(XenosRecomp PRIVATE REBLUE_RECOMP)
+    target_precompile_headers(XenosRecomp PRIVATE <fmt/format.h>)
+endif()
 
 if(NOT TARGET xxHash::xxhash)
     set(XXHASH_BUILD_XXHSUM OFF CACHE BOOL "" FORCE)

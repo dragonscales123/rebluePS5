@@ -8,6 +8,12 @@ project(reblue VERSION 1.3.1 LANGUAGES C CXX)
 
 include(CMakeDependentOption)
 
+# PlayStation 5 homebrew (the PS5 payload SDK's toolchain sets PS5): Vulkan
+# only, linked and packaged as a title. See cmake/RebluePs5.cmake, docs/PS5.md.
+if(PS5)
+    include(cmake/RebluePs5.cmake)
+endif()
+
 cmake_dependent_option(REBLUE_D3D12
     "Build the D3D12 renderer backend (OFF selects Vulkan)" ON "WIN32" OFF)
 cmake_dependent_option(REBLUE_VULKAN_EXE
@@ -87,6 +93,15 @@ function(reblue_d3d12_sources)
 endfunction()
 
 add_subdirectory(src)
+
+# PS5: the checking allocator (src/platform/ps5_debug_heap.cpp), a diagnostic
+# build. Only that file's flags change, so switching it rebuilds one file.
+option(REBLUE_PS5_DEBUG_HEAP "PS5: guard every heap block and report the first damaged one" OFF)
+if(PS5 AND REBLUE_PS5_DEBUG_HEAP)
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/src/platform/ps5_debug_heap.cpp"
+        TARGET_DIRECTORY reblue_common PROPERTIES COMPILE_DEFINITIONS REBLUE_PS5_DEBUG_HEAP=1
+        SKIP_PRECOMPILE_HEADERS ON)
+endif()
 include(cmake/generated.cmake)
 
 if(WIN32)
@@ -113,7 +128,7 @@ endif()
 # The update check speaks HTTPS: WinHTTP on Windows, libcurl elsewhere. Only
 # the headers are a build dependency, since http.cpp dlopens the library. A
 # build with no endpoint to ask may go without them.
-if(NOT WIN32)
+if(NOT WIN32 AND NOT PS5)
     find_package(CURL QUIET)
     if(NOT CURL_FOUND)
         if(REBLUE_UPDATE_BASE)
@@ -244,6 +259,10 @@ foreach(target IN LISTS REBLUE_VULKAN_TARGETS)
             "-framework IOKit"
             "-framework IOSurface"
             "-framework CoreGraphics")
+    elseif(PS5)
+        # plume builds the surface through SDL3's PS5 driver (VK_KHR_display) and
+        # reaches the RADV linked into the title through volk: ps5/link-title.sh
+        # brings the driver in, and nothing else is linked here.
     else()
         # plume builds the surface through SDL3, which dlopen's the X11 or Wayland
         # client libraries itself, so nothing here links a window system.
@@ -255,8 +274,8 @@ endforeach()
 # The SDK stages its shared runtime libs next to the exe on Windows only, and
 # nothing populates the $ORIGIN rpath it sets on UNIX, so librexruntime and
 # libTracyClient link but fail to load. These two are the only SHARED IMPORTED
-# targets reblue links.
-if(UNIX)
+# targets reblue links. A PS5 title links them statically.
+if(UNIX AND NOT PS5)
     foreach(target IN LISTS REBLUE_TARGETS)
         add_custom_command(TARGET ${target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different

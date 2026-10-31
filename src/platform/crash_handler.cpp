@@ -21,6 +21,10 @@
 #include <rex/logging.h>
 #include <rex/runtime.h>
 #include <rex/version.h>
+#if defined(__PROSPERO__)
+#include <rex/system/kernel_state.h>
+#include <rex/system/xthread.h>
+#endif
 
 #include "core/logging.h"
 #include "platform/fatal_dialog.h"
@@ -253,6 +257,111 @@ void LogRegisters(const rex::arch::HostThreadContext *ctx) {
 // Chained after the SDK MMIO handler, so it only sees faults the runtime
 // declined. Returns false: never recover, let the OS produce its default
 // termination.
+#if defined(__PROSPERO__)
+// PS5 bring-up: which logical processor each guest thread believes it is on,
+// and what the game's audio engine has per processor (the engine at
+// 0x827854FC keeps two renderer pointers per processor at +12, and each
+// processor's worker thread at +332). A null mix buffer in the audio mixer
+// pointed here.
+u32 GuestU32(u8 *membase, u32 va) {
+  u32 v;
+  std::memcpy(&v, membase + va, 4);
+  return __builtin_bswap32(v);
+}
+
+void DumpGuest(u8 *mb, const char *what, u32 va, u32 len) {
+  if (va < 0x10000 || va >= 0xE0000000u || len == 0)
+    return;
+  BD_CRITICAL("  {} @ {:08X}:", what, va);
+  for (u32 off = 0; off < len; off += 32) {
+    std::string line;
+    for (u32 i = 0; i < 32 && off + i < len; i += 4)
+      line += fmt::format(" {:08X}", GuestU32(mb, va + off + i));
+    BD_CRITICAL("    +{:03X}{}", off, line);
+  }
+}
+
+// The faulting guest context (volatile registers; the recompiled code keeps
+// r14-r31 in host registers), the guest stack frame, and the object the
+// audio mixer was working on: sub_82684D18 keeps its voice (guest r31) in
+// host r12 and voice+184 in host r15 in this build.
+void LogGuestContextPs5(const rex::arch::HostThreadContext *hc) {
+  auto *rt = rex::Runtime::instance();
+  u8 *mb = rt ? rt->virtual_membase() : nullptr;
+  auto *self = rex::system::XThread::GetCurrentThread();
+  if (!mb || !self || !self->thread_state())
+    return;
+  const ::PPCContext *c = self->thread_state()->context();
+  if (!c)
+    return;
+  BD_CRITICAL("guest context: r1={:08X} r3={:08X} r4={:08X} r5={:08X} r6={:08X} "
+              "r7={:08X} r8={:08X} r9={:08X} r10={:08X} r11={:08X} r12={:08X} r13={:08X}",
+              c->r1.u32, c->r3.u32, c->r4.u32, c->r5.u32, c->r6.u32, c->r7.u32,
+              c->r8.u32, c->r9.u32, c->r10.u32, c->r11.u32, c->r12.u32, c->r13.u32);
+  DumpGuest(mb, "guest stack frame", c->r1.u32, 0xE0);
+#if REX_ARCH_AMD64
+  if (!hc)
+    return;
+  const u64 r12 = hc->int_registers[12], r15 = hc->int_registers[15];
+  if (r15 == r12 + 184 && r12 < 0xE0000000u) {
+    const u32 voice = static_cast<u32>(r12);
+    DumpGuest(mb, "mixer voice (host r12)", voice, 0x120);
+    const u32 count = mb[voice + 56];
+    const u32 elems = GuestU32(mb, voice + 188);
+    BD_CRITICAL("  voice: {} output(s) at {:08X}, +184={:08X}", count, elems,
+                GuestU32(mb, voice + 184));
+    for (u32 i = 0; i < count && i < 8; ++i)
+      DumpGuest(mb, fmt::format("output {}", i).c_str(), elems + i * 88, 88);
+    DumpGuest(mb, "voice+184 target", GuestU32(mb, voice + 184), 0x40);
+  } else {
+    BD_CRITICAL("  (host r12/r15 are not the mixer voice: {:#x} {:#x})", r12, r15);
+  }
+#endif
+}
+
+void LogGuestThreadsPs5() {
+  auto *rt = rex::Runtime::instance();
+  auto *ks = REX_KERNEL_STATE();
+  u8 *mb = rt ? rt->virtual_membase() : nullptr;
+  if (!ks || !mb)
+    return;
+  auto *self = rex::system::XThread::GetCurrentThread();
+  BD_CRITICAL("guest threads (* faulted):");
+  for (auto &t : ks->object_table()->GetObjectsByType<rex::system::XThread>(
+           rex::system::XObject::Type::Thread)) {
+    const u32 pcr = t->pcr_ptr();
+    const u32 kt = t->guest_object();
+    const auto *cp = t->creation_params();
+    BD_CRITICAL("  {}{:08X} '{}' guest={} start={:08X} flags={:08X} pcr={:08X} "
+                "pcr.cpu={} kthread={:08X} kthread.cpu={}",
+                t.get() == self ? "*" : " ", t->handle(), t->name(),
+                t->is_guest_thread() ? 1 : 0, cp->start_address,
+                cp->creation_flags, pcr, pcr ? int(mb[pcr + 0x10C]) : -1, kt,
+                kt ? int(mb[kt + 0xBF]) : -1);
+  }
+  const u32 engine = GuestU32(mb, 0x827854FC);
+  BD_CRITICAL("audio engine {:08X}", engine);
+  if (engine == 0 || engine >= 0xE0000000u)
+    return;
+  BD_CRITICAL("  +300={:08X} +304={:08X}", GuestU32(mb, engine + 300),
+              GuestU32(mb, engine + 304));
+  for (u32 cpu = 0; cpu < 6; ++cpu) {
+    const u32 r0 = GuestU32(mb, engine + 12 + cpu * 8);
+    const u32 r1 = GuestU32(mb, engine + 16 + cpu * 8);
+    const u32 th = GuestU32(mb, engine + (cpu + 83) * 4);
+    auto buf = [&](u32 r) {
+      return r && r < 0xE0000000u
+                 ? fmt::format("{:08X}[+12={:08X} +16={:08X} +20={:08X}]", r,
+                               GuestU32(mb, r + 12), GuestU32(mb, r + 16),
+                               GuestU32(mb, r + 20))
+                 : fmt::format("{:08X}", r);
+    };
+    BD_CRITICAL("  cpu{} thread={:08X} renderer0={} renderer1={}", cpu, th,
+                buf(r0), buf(r1));
+  }
+}
+#endif
+
 bool CrashHandler(rex::arch::Exception *ex, void * /*data*/) {
 #if defined(_WIN32)
   if (s_reporting.test_and_set(std::memory_order_acq_rel))
@@ -292,6 +401,11 @@ bool CrashHandler(rex::arch::Exception *ex, void * /*data*/) {
       BD_CRITICAL("guest fault VA: {:#010x}", static_cast<u32>(fa - base));
     }
   }
+
+#if defined(__PROSPERO__)
+  LogGuestThreadsPs5();
+  LogGuestContextPs5(ex->thread_context());
+#endif
 
   BD_CRITICAL("registers:");
   LogRegisters(ex->thread_context());
