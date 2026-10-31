@@ -97,6 +97,17 @@ void StopGuestThreads() {
 
 [[noreturn]] void RunSequence(ShutdownReason reason, int exit_code) {
   BD_WARN("[shutdown] requested ({})", ReasonName(reason));
+#if defined(__PROSPERO__)
+  // The PS5 reclaims the whole title when it closes, so there is nothing to
+  // tear down, and tearing down the renderer and guest threads there crashed
+  // on the way out. Saves and settings are already on disk: flush the log
+  // and hand back to the shell (TerminateProcessNow ends in _Exit, which
+  // ps5_title.cpp turns into sceSystemServiceLoadExec("exit")).
+  g_finished.store(true, std::memory_order_release);
+  BD_INFO("[shutdown] PS5: returning to the system, exit {}", exit_code);
+  rex::FlushLogging();
+  TerminateProcessNow(exit_code);
+#endif
   ArmWatchdog(exit_code);
 
   Stage("quiesce-renderer", [] { gpu::Video::BeginShutdown(); });
