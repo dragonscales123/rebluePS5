@@ -3,7 +3,7 @@
 This branch builds re:Blue as a homebrew title for a jailbroken PS5. It
 renders through plume's Vulkan backend on RADV, which is linked into the
 title, and runs on the ReXGlue SDK's PS5 port
-(github.com/dragonscales123/rexglue-sdk, branch `ps5-port`).
+(github.com/dragonscales123/rexglue-sdk-PS5, branch `ps5-port`).
 
 Status: boots, plays with graphics, music, voices and DualSense input; battles,
 cutscenes, saving and loading tested on Disc 1. Discs 2 and 3 are untested.
@@ -34,7 +34,7 @@ repository, and nothing derived from it should be published.
   ```
   work/
     reblue/              this repository, branch ps5-port
-    rexglue-sdk/         dragonscales123/rexglue-sdk, branch ps5-port
+    rexglue-sdk/         dragonscales123/rexglue-sdk-PS5, branch ps5-port (cloned into this folder name)
     PS5_VulkanTemplate/
     PS5_Vulkan/
   ```

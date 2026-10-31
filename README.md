@@ -9,7 +9,7 @@
 
 # re:Blue PS5
 
-A PS5 homebrew port of [re:Blue](https://github.com/zolaware/reblue), which rebuilds Blue Dragon as a native program through static recompilation: the original Xbox 360 code is translated ahead of time into code the console runs directly, instead of emulating an Xbox 360 around it. On the PS5 it renders through Vulkan (Mesa's RADV driver, built into the title) and runs on the [ReXGlue SDK's PS5 port](https://github.com/dragonscales123/rexglue-sdk/tree/ps5-port).
+A PS5 homebrew port of [re:Blue](https://github.com/zolaware/reblue), which rebuilds Blue Dragon as a native program through static recompilation: the original Xbox 360 code is translated ahead of time into code the console runs directly, instead of emulating an Xbox 360 around it. On the PS5 it renders through Vulkan (Mesa's RADV driver, built into the title) and runs on the [ReXGlue SDK's PS5 port](https://github.com/dragonscales123/rexglue-sdk-PS5/tree/ps5-port).
 
 This is a port of zolaware's work, not a replacement for it. Please don't take PS5 issues to the re:Blue team.
 
@@ -107,7 +107,7 @@ The newest file in `logs/` and `boot.txt`. On the PS5 a crash report also lists 
 
 ## What the PS5 Port Changes
 
-Most of the work is in the [ReXGlue SDK's PS5 port](https://github.com/dragonscales123/rexglue-sdk/tree/ps5-port); the rest is the PS5 build in this branch.
+Most of the work is in the [ReXGlue SDK's PS5 port](https://github.com/dragonscales123/rexglue-sdk-PS5/tree/ps5-port); the rest is the PS5 build in this branch.
 
 ### ReXGlue SDK
 
