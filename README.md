@@ -20,6 +20,7 @@ This is a port of zolaware's work, not a replacement for it. Please don't take P
 - [How to Install](#how-to-install)
 - [Features](#features)
 - [FAQ](#faq)
+- [What the PS5 Port Changes](#what-the-ps5-port-changes)
 - [Building](#building)
 - [Credits](#credits)
 - [License](#license)
@@ -104,6 +105,28 @@ No. Replace `eboot.bin` (and `sce_sys/`, `sce_module/` if they changed) over FTP
 
 The newest file in `logs/` and `boot.txt`. On the PS5 a crash report also lists every guest thread and the faulting guest state.
 
+## What the PS5 Port Changes
+
+Most of the work is in the [ReXGlue SDK's PS5 port](https://github.com/dragonscales123/rexglue-sdk/tree/ps5-port); the rest is the PS5 build in this branch.
+
+### ReXGlue SDK
+
+- **PS5 platform support:** guest memory in one direct-memory arena with fixed views (64 KiB granularity), FreeBSD register layouts for the exception handler, PS5 threads, cpusets and signals, and a static runtime build.
+- **Heap corruption at boot:** the console's `getcontext()` writes a larger context than the SDK's `ucontext_t` declares, which overran every thread's fiber object. Fibers on PS5 now switch with their own small routine (callee-saved registers, MXCSR, x87 control word) and don't use ucontext at all.
+- **Audio crash at boot:** guest addresses at `0xE0000000` and up sit 4 KiB higher in host memory on the PS5. The runtime applied that offset but the code generator didn't, so the game read the kernel's writes 4 KiB away (first seen as XMA audio contexts reading back as null). The codegen template now matches the runtime.
+- **Library collision:** the SDK's VulkanMemoryAllocator is renamed in the static library so it doesn't clash with the renderer's.
+- **PS5 patches for SDL3 and FFmpeg.**
+
+### re:Blue
+
+- **PS5 build and packaging:** Vulkan-only build with a prebuilt SPIR-V shader cache, a link step that produces a signed `eboot.bin`, `sce_sys`, and an auto-generated install record.
+- **Console startup:** paths under `/app0`, RADV entry points for volk, boot breadcrumbs in `boot.txt`, and exiting back to the shell.
+- **Libc gaps:** functions the payload SDK lacks (`timegm`, `pathconf`, `tempnam`, ...), and CP932 text conversion without iconv.
+- **Exit crash fixed:** choosing Exit ran the desktop teardown, which crashed on the console; the PS5 build now flushes its log and returns straight to the system.
+- **Crash diagnostics:** on PS5 a crash report also lists every guest thread and its processor, plus the faulting guest state.
+- **Debug allocator:** an optional checking allocator for chasing heap bugs (`REBLUE_PS5_DEBUG_HEAP=ON`).
+- **Code regeneration:** the build regenerates the game code whenever the code generator changes, so generator fixes actually take effect.
+
 ## Building
 
 The PS5 build cross-compiles on Linux (Ubuntu 24.04; WSL works) with clang/lld 20, mihawk-99's PS5 payload SDK and PS5_Vulkan (RADV), and the ReXGlue SDK's `ps5-port` branch:
@@ -143,6 +166,7 @@ re:Blue is the work of its development team, and this port would not exist witho
 ### PS5 Port
 
 - **[dragonscales123](https://github.com/dragonscales123)**, with Claude
+- **BlackBearReloaded**, for the clean-room `libc.prx`
 - **[mihawk-99](https://github.com/mihawk-99)**, for the PS5 payload SDK, PS5_Vulkan and the RADV port this build renders through
 - Dashboard icon: [Dragon emblem](https://pixabay.com/illustrations/dragon-mythology-fantasy-monster-1721875/) by TheDigitalArtist on Pixabay, under the Pixabay Content License
 
@@ -156,4 +180,6 @@ re:Blue is the work of its development team, and this port would not exist witho
 
 ## License
 
-See [LICENSE](LICENSE).
+re:Blue is under the BSD 3-Clause License; see [LICENSE](LICENSE).
+
+The PS5 title combines re:Blue and the ReXGlue SDK (BSD-3-Clause, with Xenia-derived parts), Mesa/RADV (MIT), SDL (zlib), FFmpeg (LGPL-2.1), and the PS5 payload SDK platform layer and `libc.prx` (GPL-3.0-or-later), so a built title as a whole is GPL-3.0-or-later. The release zips carry every license text in `LICENSES/`.
