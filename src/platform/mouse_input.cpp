@@ -146,10 +146,19 @@ void MouseInput::ApplyPointerMode() {
     window->SetCursorVisibility(rex::ui::Window::CursorVisibility::kHidden);
   }
   if (want == PointerMode::Locked) {
+#if defined(__PROSPERO__)
+    // No mouse and no pointer lock on the PS5: do not ask (SDL would refuse
+    // and log it every time the camera mode changes).
+    relative_ = false;
+#else
     relative_ = window->SetRelativeMouseMode(true);
-    if (!relative_)
+    static bool warned = false;
+    if (!relative_ && !warned) {
+      warned = true;
       BD_WARN("[mouse] pointer lock unavailable, mouse look recenters the "
               "pointer instead");
+    }
+#endif
     lockX_ = i32(x_.load(std::memory_order_relaxed));
     lockY_ = i32(y_.load(std::memory_order_relaxed));
   }

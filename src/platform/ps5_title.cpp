@@ -99,10 +99,14 @@ void InitializeTitle() {
   Breadcrumb("title: stderr to klog");
   ps5_fp_ieee();
   {
+    // A title may not chdir on the console (EPERM); every path the title
+    // opens is absolute under /app0, so only a different failure is news.
     const int rc = chdir("/app0");
-    char line[96];
-    std::snprintf(line, sizeof(line), "title: chdir /app0 rc=%d errno=%d", rc, rc == 0 ? 0 : errno);
-    Breadcrumb(line);
+    if (rc != 0 && errno != EPERM) {
+      char line[96];
+      std::snprintf(line, sizeof(line), "title: chdir /app0 failed, errno=%d", errno);
+      Breadcrumb(line);
+    }
   }
   (void)sceSystemServiceHideSplashScreen();
   Breadcrumb("title: splash hidden");
