@@ -43,6 +43,16 @@ bool RubyHidden() { return i18n::CurrentLocale() != engine::kLocaleJP; }
 // bd_boot.ini's [Voice] list gives it something to choose between.
 bool VoiceLanguageHidden() { return engine::Language().VoiceCount() < 2; }
 
+// Rows that mean nothing on the PS5: there is no window to size or move, no
+// monitor to pick, no mouse or keyboard, and no updater.
+bool PcOnly() {
+#if defined(__PROSPERO__)
+  return true;
+#else
+  return false;
+#endif
+}
+
 double DisplayModeNum() {
   if (rex::cvar::GetFlagByName("fullscreen") != "true")
     return 0.0;
@@ -440,7 +450,8 @@ constexpr SettingRow kGameplaySettings[] = {
                            static_cast<i32>(v));
                      }},
      .options = kGlyphSet,
-     .count = OptCount(kGlyphSet)},
+     .count = OptCount(kGlyphSet),
+     .hidden = PcOnly},
     {.label = "settings.gameplay.pad_glyphs.label",
      .group = "menu.header.interface",
      .binding = {.get =
@@ -465,7 +476,8 @@ constexpr SettingRow kGameplaySettings[] = {
                        return Settings::Get().SetUpdateCheck(v != 0.0);
                      }},
      .options = kOnOff,
-     .count = OptCount(kOnOff)},
+     .count = OptCount(kOnOff),
+     .hidden = PcOnly},
     {.label = "settings.gameplay.update_channel.label",
      .group = "menu.header.advanced",
      .binding = {.get =
@@ -479,7 +491,8 @@ constexpr SettingRow kGameplaySettings[] = {
                            static_cast<UpdateChannel>(static_cast<i32>(v)));
                      }},
      .options = kUpdateChannel,
-     .count = OptCount(kUpdateChannel)},
+     .count = OptCount(kUpdateChannel),
+     .hidden = PcOnly},
     {.label = "settings.gameplay.developer_mode.label",
      .group = "menu.header.advanced",
      .binding = {
@@ -497,12 +510,14 @@ constexpr SettingRow kDisplaySettings[] = {
                  .cvar = "fullscreen",
                  .cvar2 = "fullscreen_exclusive"},
      .options = kDisplayMode,
-     .count = OptCount(kDisplayMode)},
+     .count = OptCount(kDisplayMode),
+     .hidden = PcOnly},
     {.label = "settings.display.monitor.label",
      .group = "menu.header.window",
      .binding = {.cvar = "monitor"},
      .sliderUi = true,
-     .special = SettingSpecial::Monitor},
+     .special = SettingSpecial::Monitor,
+     .hidden = PcOnly},
     {.label = "settings.display.resolution.label",
      .group = "menu.header.window",
      .binding = {.get = RenderResolutionNum, .setText = SetRenderResolution},
@@ -515,7 +530,8 @@ constexpr SettingRow kDisplaySettings[] = {
      .options = kWindowSize,
      .count = OptCount(kWindowSize),
      .sliderUi = true,
-     .windowedGated = true},
+     .windowedGated = true,
+     .hidden = PcOnly},
     {.label = "settings.display.aspect_ratio.label",
      .group = "menu.header.window",
      .binding = {
@@ -546,7 +562,8 @@ constexpr SettingRow kDisplaySettings[] = {
      .smin = 0.0,
      .smax = 30.0,
      .sstep = 1.0,
-     .sfmt = "%.0f"},
+     .sfmt = "%.0f",
+     .hidden = PcOnly},
     {.label = "settings.display.brightness.label",
      .group = "menu.header.picture",
      .binding = OptPercent<&engine::GameOptions::Brightness,
@@ -839,7 +856,8 @@ constexpr SettingRow kControlsSettings[] = {
      .kind = SettingKind::Slider,
      .smin = 0.25,
      .smax = 10.0,
-     .sstep = 0.25},
+     .sstep = 0.25,
+     .hidden = PcOnly},
     {.label = "settings.controls.mouse_cursor_opacity.label",
      .group = "menu.header.keyboard_mouse",
      .binding = {.get =
@@ -856,7 +874,8 @@ constexpr SettingRow kControlsSettings[] = {
      .smin = static_cast<double>(engine::Settings::kMouseCursorOpacityMin),
      .smax = static_cast<double>(engine::Settings::kMouseCursorOpacityMax),
      .sstep = 5.0,
-     .sfmt = "%.0f"},
+     .sfmt = "%.0f",
+     .hidden = PcOnly},
 };
 
 // Order matches SettingsPage, which is also sidebar order.

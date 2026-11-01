@@ -238,6 +238,46 @@ int PadSetCell(PadSet pad, int idx) {
   return kPadSetBase + static_cast<int>(pad) * kPadSetCells + idx;
 }
 
+#if defined(__PROSPERO__)
+#include "engine/ps5_touchpad_glyph.inc"
+#endif
+
+// The embedded sheet's block payload, with the PS5's own art patched in: on
+// the console the Create button belongs to the system and the touch pad's
+// click is Back, so the PlayStation set's Back cell shows the touch pad.
+const std::vector<u8> &SheetSource() {
+  static const std::vector<u8> source = [] {
+    constexpr auto kSheet = bd::Embedded("glyphs/cmn_help_menue.dds");
+    std::vector<u8> blob(kSheet.data, kSheet.data + kSheet.size);
+#if defined(__PROSPERO__)
+    namespace tu = rex::graphics::texture_util;
+    if (blob.size() > kSheetPayload) {
+      u8 *payload = blob.data() + kSheetPayload;
+      const size_t bytes = blob.size() - kSheetPayload;
+      const int cell = PadSetCell(PadSet::PlayStation, PadSetIndex(int(Button::Back)));
+      const i32 cx = i32(cell % kSheetCols) * i32(kCellBlocks);
+      const i32 cy = i32(cell / kSheetCols) * i32(kCellBlocks);
+      for (i32 by = 0; by < i32(kCellBlocks); ++by) {
+        for (i32 bx = 0; bx < i32(kCellBlocks); ++bx) {
+          const i32 off = tu::GetTiledOffset2D(cx + bx, cy + by, kSheetBlockPitch,
+                                               kSheetBlockLog2);
+          if (off < 0 || size_t(off) + kSheetBlockBytes > bytes)
+            continue;
+          const u8 *src = kPs5TouchpadCell + size_t(by * i32(kCellBlocks) + bx) * kSheetBlockBytes;
+          // The sheet stores blocks 8-in-16 swapped, as the Xbox 360 did.
+          for (u32 i = 0; i < kSheetBlockBytes; i += 2) {
+            payload[off + i] = src[i + 1];
+            payload[off + i + 1] = src[i];
+          }
+        }
+      }
+    }
+#endif
+    return blob;
+  }();
+  return source;
+}
+
 int PadArtCell(PadSet pad, int cellIndex) {
   const GlyphCell &c = kCells[cellIndex];
   const int idx = c.action == kNoAction ? cellIndex : PadGlyphIndex(c.action);
@@ -400,11 +440,11 @@ UVRect Glyphs::KeyArtUV(int keyIndex) {
 std::vector<u8> Glyphs::SheetPixels() {
   namespace tc = rex::graphics::texture_conversion;
   namespace tu = rex::graphics::texture_util;
-  constexpr auto kSheet = bd::Embedded("glyphs/cmn_help_menue.dds");
-  if (kSheet.size <= kSheetPayload)
+  const std::vector<u8> &sheet = SheetSource();
+  if (sheet.size() <= kSheetPayload)
     return {};
-  const u8 *src = kSheet.data + kSheetPayload;
-  const size_t bytes = kSheet.size - kSheetPayload;
+  const u8 *src = sheet.data() + kSheetPayload;
+  const size_t bytes = sheet.size() - kSheetPayload;
 
   constexpr u32 kWidth = kSheetCols * kSheetCellPx;
   constexpr u32 kHeight = kSheetRows * kSheetCellPx;
@@ -482,13 +522,13 @@ void Glyphs::Apply() {
 }
 
 std::vector<u8> Glyphs::ComposeSheet() const {
-  constexpr auto kSheet = bd::Embedded("glyphs/cmn_help_menue.dds");
-  std::vector<u8> blob(kSheet.data, kSheet.data + kSheet.size);
+  const std::vector<u8> &sheet = SheetSource();
+  std::vector<u8> blob = sheet;
   if (blob.size() <= kSheetPayload)
     return blob;
   const bool keyboard = resolved_ == GlyphSet::Keyboard;
   u8 *payload = blob.data() + kSheetPayload;
-  const u8 *src = kSheet.data + kSheetPayload;
+  const u8 *src = sheet.data() + kSheetPayload;
   const size_t bytes = blob.size() - kSheetPayload;
   for (int i = 0; i < kHelpCells; ++i) {
     const GlyphCell &c = kCells[i];
