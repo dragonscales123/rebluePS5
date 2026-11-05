@@ -43,7 +43,13 @@ Download the latest build from [Releases](https://github.com/dragonscales123/reb
 
 1. **Get the title folder.** Download the latest zip from [Releases](https://github.com/dragonscales123/rebluePS5/releases), or build it yourself (see [Building](#building)). Either way you get a folder named `PPSA99213` with `eboot.bin`, `sce_sys/`, `sce_module/` and `.reblue_install`.
 2. **Copy it to the console** as `/data/homebrew/PPSA99213/`.
-3. **Add the game files.** Extract the files from all three disc images (for example with `extract-xiso`) and merge them into `/data/homebrew/PPSA99213/game/`, so that `game/default.xex` and `game/pack/` exist.
+3. **Add the game files.** This step runs on your computer, and needs [Python 3](https://www.python.org/downloads/) and about 25 GB free.
+   1. Download [`extract-iso-tools.zip`](https://github.com/dragonscales123/rebluePS5/releases/latest/download/extract-iso-tools.zip) and unzip it.
+   2. Put your three disc images in the `extract-iso-tools` folder, with names like `Disc 1.iso`, `Disc 2.iso` and `Disc 3.iso`.
+   3. Open a terminal in that folder and run `python extract-discs.py` on Windows, or `python3 extract-discs.py` on Linux and macOS. It creates a `game` folder of about 13 GB.
+   4. Copy that folder to the console as `/data/homebrew/PPSA99213/game/`, so that `game/default.xex` and `game/pack/` exist.
+
+   Don't extract the discs over each other by hand. That leaves the wrong `default.xex` and skips a `bd_boot.ini` change the cutscene voices need. The tools run on 64-bit Windows, x86-64 Linux, and Apple Silicon Macs on macOS 26 or newer. If macOS blocks the tool, run `xattr -d com.apple.quarantine extract-xiso-macos` in the folder.
 4. **Launch** Blue Dragon from the home screen once your launcher has registered it (ShadowMount+ does this on its own a few seconds after the folder stops changing).
 
 There is no setup wizard on the PS5. `.reblue_install` tells the title that its game files are in `game/` next to it.
